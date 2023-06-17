@@ -6,6 +6,11 @@ edition = "2021"
 resolver = "2"
 rust-version = "1.66"
 
+[toolchain]
+channel = "esp"
+components = ["rustfmt", "rustc-dev"]
+targets = ["xtensa-esp32-none-elf"]
+
 [profile.release]
 opt-level = "s"
 

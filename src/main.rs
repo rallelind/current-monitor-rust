@@ -1,12 +1,35 @@
-use esp_idf_sys as _; // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
-use log::*;
+use embedded_svc::wifi::{AuthMethod, ClientConfiguration, Configuration};
+use esp_idf_hal::peripherals::Peripherals;
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::nvs::EspDefaultNvsPartition;
+use esp_idf_svc::wifi::EspWifi;
+use esp_idf_sys::EspError;
 
-fn main() {
-    // It is necessary to call this function once. Otherwise some patches to the runtime
-    // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
+fn main() -> Result<(), EspError> {
     esp_idf_sys::link_patches();
-    // Bind the log crate to the ESP Logging facilities
-    esp_idf_svc::log::EspLogger::initialize_default();
 
-    info!("Hello, world!");
+    let peripherals = Peripherals::take().unwrap();
+    let sysloop = EspSystemEventLoop::take()?;
+    let nvs_default_partition = EspDefaultNvsPartition::take()?;
+
+    let mut wifi = EspWifi::new(
+        peripherals.modem,
+        sysloop.clone(),
+        Some(nvs_default_partition.clone()),
+    )?;
+
+    wifi.set_configuration(&Configuration::Client(ClientConfiguration {
+        ssid: "Zyxel_CB11".into(),
+        password: "A4477J33PF".into(),
+        auth_method: AuthMethod::None,
+        ..Default::default()
+    }))?;
+
+    wifi.start()?;
+    wifi.connect()?;
+    
+    print!("{:#?}", wifi.is_connected());
+
+    Ok(())
 }
+
